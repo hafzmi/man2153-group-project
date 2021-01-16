@@ -5,7 +5,7 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score
 from keras.models import Sequential, clone_model
 from keras.layers import Dense
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 
 DIR_SAVED_WEIGHTS = 'tmp-ann-weights'
 
@@ -140,8 +140,9 @@ def wsf_ann_cv(ann, X, y, cv, epochs, batch_size, validation_split):
 def wsf_ann_fit_save_best(model, X, y, epochs=20, batch_size=1000, validation_split=0.2):
   model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_squared_error'])
 
-  cp_file_path = DIR_SAVED_WEIGHTS + '/' + str(uuid.uuid4()) + '.hdf5' 
-  cp = ModelCheckpoint(cp_file_path, monitor='val_mean_squared_error', verbose = 1, save_best_only = True, mode ='auto')
+  # cp_file_path = DIR_SAVED_WEIGHTS + '/' + str(uuid.uuid4()) + '.hdf5' 
+  # cp = ModelCheckpoint(cp_file_path, monitor='val_mean_squared_error', verbose = 1, save_best_only = True, mode ='auto')
+  cp = EarlyStopping(monitor='loss', patience=4, restore_best_weights=True)
 
   time_start = time.time()
   model.fit(X, y, epochs=epochs, batch_size=batch_size, validation_split=validation_split, callbacks=[cp])
