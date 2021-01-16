@@ -1,2 +1,4 @@
-def greet():
-    print 'hello!'
+NAME = 'World'
+
+def hello():
+    return 'Hello, ' + NAME + '!'
