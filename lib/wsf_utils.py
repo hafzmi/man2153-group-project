@@ -27,3 +27,14 @@ def wsf_find_best_model_cv(regressor, params, X_train, y_train, no_of_models=5, 
   best_model = search.best_estimator_
 
   return train_results, best_model 
+
+def wsf_predict_and_eval(model, X, y):
+  y_pred = model.predict(X)
+  return wsf_weighted_mean_abs_err(X, y, y_pred)
+
+def wsf_weighted_mean_abs_err(X, y, y_pred): 
+  # weight: 5 for holiday, 1 for non-holiday
+  w = X['IsHoliday'].apply(lambda val: 5 if val == 1 else 1)
+  
+  wmae_score = np.sum(w * np.abs(y - y_pred), axis=0) / np.sum(w)
+  return wmae_score
