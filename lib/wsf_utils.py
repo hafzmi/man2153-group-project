@@ -27,6 +27,7 @@ def wsf_find_best_model_cv(regressor, params, X_train, y_train, no_of_models=5, 
 
 def wsf_predict_and_eval(model, X, y):
   y_pred = model.predict(X)
+  y_pred.resize(len(y_pred, 0)) # necessary for ANNs
   return wsf_weighted_mean_abs_err(X, y, y_pred)
 
 def wsf_weighted_mean_abs_err(X, y, y_pred): 
