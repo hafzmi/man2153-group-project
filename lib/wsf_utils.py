@@ -1,9 +1,6 @@
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import RandomizedSearchCV
-# from warnings import simplefilter
-# from sklearn.exceptions import ConvergenceWarning
-
-# simplefilter("ignore", category=ConvergenceWarning)
 
 def wsf_get_neg_sales(df_data):
   df_neg = df_data[df_data['Weekly_Sales'] < 0]
