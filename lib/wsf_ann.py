@@ -65,12 +65,15 @@ def wsf_find_best_ann_cv(anns, X, y, cv=3, epochs=20, batch_size=1000, validatio
   best_model_index = 0
 
   for i in np.arange(len(anns)):
-    model_info = wsf_ann_cv(anns[i], X, y, cv, epochs, batch_size, validation_split)
+    # train the ANN and save the training information
+    model_info = wsf_train_ann_cv(anns[i], X, y, cv, epochs, batch_size, validation_split)
     model_info['model_id'] = 'model-' + str(i)
+    results.append(model_info)
+
+    # record the best model with the best score
     if (model_info['mean_test_score'] > best_mean_score):
       best_mean_score = model_info['mean_test_score']
       best_model_index = i
-    results.append(model_info)
   
   return pd.DataFrame(results), best_model_index
 
@@ -94,7 +97,7 @@ def wsf_find_best_ann_cv(anns, X, y, cv=3, epochs=20, batch_size=1000, validatio
     ----------
     A dictionary containing training results: splitX_test_score, mean_test_score, mean_fit_time.
 """    
-def wsf_ann_cv(ann, X, y, cv, epochs, batch_size, validation_split):
+def wsf_train_ann_cv(ann, X, y, cv, epochs, batch_size, validation_split):
   total_scores = 0
   total_fit_time = 0
   split_index = 0
@@ -102,20 +105,25 @@ def wsf_ann_cv(ann, X, y, cv, epochs, batch_size, validation_split):
 
   kf = KFold(n_splits = cv, shuffle=True)
   for train_index, val_index in kf.split(X):
+    # training and cross validation data for the fold
     X_fit, y_fit = X.iloc[train_index], y.iloc[train_index]
     X_val, y_val = X.iloc[val_index], y.iloc[val_index]
 
+    # train the model with training data
     model = clone_model(ann)
-    fit_time = wsf_ann_fit_save_best(model, X_fit, y_fit, epochs=epochs, batch_size=batch_size, validation_split=validation_split)
+    fit_time = wsf_train_ann(model, X_fit, y_fit, epochs=epochs, batch_size=batch_size, validation_split=validation_split)
 
+    # evaluate the model using cross validation data
     y_pred = model.predict(X_val)
     score = r2_score(y_val, y_pred)
 
+    # record test score and training time
     total_scores += score
     total_fit_time += fit_time
     results['split' + str(split_index) + '_test_score'] = score
     split_index += 1
 
+  # calculate the mean score and training time for the ANN across the k-fold splits
   results['mean_test_score'] = total_scores / cv
   results['mean_fit_time'] = total_fit_time / cv
   return results
@@ -135,19 +143,21 @@ def wsf_ann_cv(ann, X, y, cv, epochs, batch_size, validation_split):
     
     Return values
     ----------
-    A data frame containing training results, and the index of the best model in the list.
+    Model training time.
 """    
-def wsf_ann_fit_save_best(model, X, y, epochs=20, batch_size=1000, validation_split=0.2):
+def wsf_train_ann(model, X, y, epochs=20, batch_size=1000, validation_split=0.2):
   model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_squared_error'])
+
+  # stop the training if loss doesn't improve in 4 consecutive epochs
+  cp = EarlyStopping(monitor='loss', patience=4, restore_best_weights=True)
 
   # cp_file_path = DIR_SAVED_WEIGHTS + '/' + str(uuid.uuid4()) + '.hdf5' 
   # cp = ModelCheckpoint(cp_file_path, monitor='val_mean_squared_error', verbose = 1, save_best_only = True, mode ='auto')
-  cp = EarlyStopping(monitor='loss', patience=4, restore_best_weights=True)
 
   time_start = time.time()
   model.fit(X, y, epochs=epochs, batch_size=batch_size, validation_split=validation_split, callbacks=[cp])
   fit_time = time.time() - time_start
 
-  model.load_weights(cp_file_path)
+  # model.load_weights(cp_file_path)
 
   return fit_time

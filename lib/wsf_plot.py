@@ -7,7 +7,6 @@ def wsf_plot_corr_matrix(df_corr):
   _ = plt.subplots(figsize=(20, 15))
   
   sns.set(style="white")
-  # plt.title('Correlation Matrix', fontsize=18)
 
   cmap = sns.diverging_palette(220, 10, as_cmap=True)
   mask = np.triu(np.ones_like(df_corr, dtype=np.bool)) # upper triangle of the matrix, all values are 1
